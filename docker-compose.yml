@@ -2,7 +2,6 @@ services:
 
   mysql:
     image: mysql:8.0
-    container_name: airsense-mysql
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
@@ -22,7 +21,6 @@ services:
   backend:
     build:
       context: ./backend
-    container_name: airsense-backend
     restart: unless-stopped
     environment:
       MYSQL_HOST: mysql
@@ -54,7 +52,6 @@ services:
       args:
         VITE_API_URL: http://34.216.137.60:8000
         VITE_PLAN: free
-    container_name: airsense-frontend
     restart: unless-stopped
     depends_on:
       - backend
@@ -63,7 +60,6 @@ services:
 
   ollama:
     image: ollama/ollama:latest
-    container_name: airsense-ollama
     restart: unless-stopped
     volumes:
       - ollama_data:/root/.ollama
