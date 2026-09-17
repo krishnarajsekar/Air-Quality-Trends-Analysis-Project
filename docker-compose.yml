@@ -1,0 +1,75 @@
+services:
+
+  mysql:
+    image: mysql:8.0
+    container_name: airsense-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: airq
+      MYSQL_USER: airquser
+      MYSQL_PASSWORD: airqpassword
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uairquser", "-pairqpassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+    container_name: airsense-backend
+    restart: unless-stopped
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_DB: airq
+      MYSQL_USER: airquser
+      MYSQL_PASSWORD: airqpassword
+
+      ALLOWED_ORIGINS: http://34.216.137.60
+      API_KEY: change-this-api-key
+      DEFAULT_PLAN: free
+      JWT_SECRET: change-this-production-secret
+      JWT_EXPIRES_MIN: 60
+      COOKIE_DOMAIN: 34.216.137.60
+
+      OLLAMA_BASE_URL: http://ollama:11434
+      OLLAMA_MODEL: gemma3:4b
+
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: http://34.216.137.60:8000
+        VITE_PLAN: free
+    container_name: airsense-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: airsense-ollama
+    restart: unless-stopped
+    volumes:
+      - ollama_data:/root/.ollama
+    ports:
+      - "11434:11434"
+
+volumes:
+  mysql_data:
+  ollama_data:
